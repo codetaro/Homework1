@@ -16,9 +16,10 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:ems="10"
-        android:hint="New Item">
+        android:hint="New Item"
+        android:visibility="invisible">
 
-        <requestFocus />
+        <!--<requestFocus />-->
     </EditText>
 
     <ListView
@@ -35,7 +36,7 @@
         android:id="@+id/btnAddItem"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add"
+        android:text="Add New"
         android:onClick="onAddItemClick"
         android:layout_alignBottom="@+id/txtNewItem"
         android:layout_alignRight="@+id/listview"

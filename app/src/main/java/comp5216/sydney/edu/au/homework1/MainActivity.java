@@ -17,6 +17,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -26,11 +28,12 @@ public class MainActivity extends AppCompatActivity {
 
     //define variables
     ListView listview;
-    ArrayList<String> items;
-    ArrayAdapter<String> itemsAdapter;
+    ArrayList<ToDoItem> items;
+    UsersAdapter itemsAdapter;
     EditText addItemEditText;
 
     public final int EDIT_ITEM_REQUEST_CODE = 647;
+    public final int ADD_ITEM_REQUEST_CODE = 547;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,17 +46,17 @@ public class MainActivity extends AppCompatActivity {
         listview = (ListView) findViewById(R.id.listview);
         addItemEditText = (EditText) findViewById(R.id.txtNewItem);
 
-        //create an ArrayList of String
-        items = new ArrayList<String>();
-        items.add("item one");
-        items.add("item two");
+        //create an ArrayList of ToDoItem
+        items = new ArrayList<ToDoItem>();
+        items.add(new ToDoItem("item one"));
+        items.add(new ToDoItem("item two"));
 
         //must call it before creating the adapter, because it references the right item list
 //        readItemsFromFile();
         readItemsFromDatabase();
 
         //create an adapter for the list view using Android's built-in item layout
-        itemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
+        itemsAdapter = new UsersAdapter(this, items);
 
         //connect the listview and the adapter
         listview.setAdapter(itemsAdapter);
@@ -62,13 +65,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onAddItemClick(View view) {
-        String toAddString = addItemEditText.getText().toString();
+        /*String toAddString = addItemEditText.getText().toString();
         if (toAddString != null && toAddString.length() > 0) {
-            itemsAdapter.add(toAddString);
+            itemsAdapter.add(new ToDoItem(toAddString));
             addItemEditText.setText("");
 
 //            saveItemsToFile();
             saveItemsToDatabase();
+        }*/
+        Intent intent = new Intent(MainActivity.this, EditToDoItemActivity.class);
+        if (intent != null) {
+            // put "extras" into the bundle for access in the edit activity
+//            intent.putExtra("item", updateItem);
+//            intent.putExtra("position", position);
+            // brings up the second activity
+//            startActivityForResult(intent, EDIT_ITEM_REQUEST_CODE);
+            startActivityForResult(intent, ADD_ITEM_REQUEST_CODE);
+            itemsAdapter.notifyDataSetChanged();
         }
     }
 
@@ -106,13 +119,13 @@ public class MainActivity extends AppCompatActivity {
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view,
                                     int position, long id) {
-                String updateItem = (String) itemsAdapter.getItem(position);
+                ToDoItem updateItem = (ToDoItem) itemsAdapter.getItem(position);
                 Log.i("MainActivity", "Clicked item " + position + ": " + updateItem);
 
                 Intent intent = new Intent(MainActivity.this, EditToDoItemActivity.class);
                 if (intent != null) {
                     // put "extras" into the bundle for access in the edit activity
-                    intent.putExtra("item", updateItem);
+                    intent.putExtra("item", new Gson().toJson(updateItem));
                     intent.putExtra("position", position);
                     // brings up the second activity
                     startActivityForResult(intent, EDIT_ITEM_REQUEST_CODE);
@@ -123,9 +136,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == EDIT_ITEM_REQUEST_CODE) {
+        if (requestCode == EDIT_ITEM_REQUEST_CODE && resultCode != RESULT_CANCELED) {
             // Extract name value from result extras
-            String editedItem = data.getExtras().getString("item");
+            String itemJson = data.getExtras().getString("item");
+            ToDoItem editedItem = new Gson().fromJson(itemJson, ToDoItem.class);
             int position = data.getIntExtra("position", -1);
             items.set(position, editedItem);
             Log.i("Updated Item in list:", editedItem + ",position:"
@@ -136,10 +150,17 @@ public class MainActivity extends AppCompatActivity {
 
 //            saveItemsToFile();
             saveItemsToDatabase();
+        } else if (requestCode == ADD_ITEM_REQUEST_CODE && resultCode != RESULT_CANCELED) {    // && short-circuits, whereas & doesn't
+            String itemJson = data.getExtras().getString("item");
+            ToDoItem item = new Gson().fromJson(itemJson, ToDoItem.class);
+            itemsAdapter.add(item);
+            itemsAdapter.notifyDataSetChanged();
+
+            saveItemsToDatabase();
         }
     }
 
-    private void readItemsFromFile() {
+    /*private void readItemsFromFile() {
         //retrieve the app's private folder.
         //this folder cannot be accessed by other apps
         File filesDir = getFilesDir();
@@ -158,9 +179,9 @@ public class MainActivity extends AppCompatActivity {
                 items = new ArrayList<String>();
             }
         }
-    }
+    }*/
 
-    private void saveItemsToFile() {
+    /*private void saveItemsToFile() {
         File filesDir = getFilesDir();
         //using the same file for reading. Should use define a global string instead.
         File todoFile = new File(filesDir, "todo.txt");
@@ -169,24 +190,26 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-    }
+    }*/
 
     private void readItemsFromDatabase() {
         //read items from database
         List<ToDoItem> itemsFromORM = ToDoItem.listAll(ToDoItem.class);
-        items = new ArrayList<String>();
+        items = new ArrayList<ToDoItem>();
         if (itemsFromORM != null & itemsFromORM.size() > 0) {
             for (ToDoItem item : itemsFromORM) {
-                items.add(item.todo);
+                items.add(item);
             }
         }
     }
 
     private void saveItemsToDatabase() {
         ToDoItem.deleteAll(ToDoItem.class);
-        for (String todo : items) {
-            ToDoItem item = new ToDoItem(todo);
-            item.save();
+        for (ToDoItem todo : items) {
+//            ToDoItem item = new ToDoItem(todo);
+//            item.save();
+
+            todo.save();
         }
     }
 }

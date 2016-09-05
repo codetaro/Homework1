@@ -4,5 +4,9 @@
     <string name="dialog_delete_msg">Do you want to delete this item?</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
-    <string name="edit">Edit</string>
+    <string name="edit">Edit/Add Item</string>
+    <string name="dialog_cancel_title">Give up edit</string>
+    <string name="dialog_cancel_msg">Are you sure to give up this edit? Your unsaved edit will be discarded by click YES.</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>
